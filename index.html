@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>100 Men vs 1 Gorilla - SNES Edition</title>
+  <style>
+    body {
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+      text-align: center;
+      margin: 0;
+      padding: 10px;
+    }
+    canvas {
+      background: #000;
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+      border: 1px solid #0f0;
+      display: block;
+      margin: 10px auto;
+    }
+    button {
+      padding: 10px;
+      font-weight: bold;
+      background: #0f0;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🦍 100 Men vs 1 Gorilla (SNES Mode)</h1>
+  <button onclick="startBattle()">Start Battle</button>
+  <canvas id="battleCanvas" width="500" height="400"></canvas>
+  <pre id="log" style="max-height: 200px; overflow-y: auto;"></pre>
+
+  <script>
+    const canvas = document.getElementById('battleCanvas');
+    const ctx = canvas.getContext('2d');
+    const log = document.getElementById('log');
+
+    // Load sprites
+    const SPRITES = {
+      human: new Image(),
+      gorilla: new Image(),
+      tile: new Image()
+    };
+
+    SPRITES.human.src = "https://opengameart.org/sites/default/files/warrior_idle.png";
+    SPRITES.gorilla.src = "https://opengameart.org/sites/default/files/ape_idle.png";
+    SPRITES.tile.src = "https://opengameart.org/sites/default/files/grass_0.png";
+
+    class Unit {
+      constructor(name, hp, strength, skill, x, y, type) {
+        this.name = name;
+        this.hp = hp;
+        this.maxHp = hp;
+        this.strength = strength;
+        this.skill = skill;
+        this.x = x;
+        this.y = y;
+        this.type = type; // 'human' or 'gorilla'
+        this.flash = 0;
+        this.offsetX = 0;
+      }
+
+      isAlive() {
+        return this.hp > 0;
+      }
+
+      attack(target) {
+        const dmg = Math.floor(Math.random() * this.skill * this.strength);
+        target.hp -= dmg;
+        target.flash = 3;
+        if (this.type === 'gorilla') this.offsetX = -20;
+        return dmg;
+      }
+
+      draw(ctx) {
+        // Draw HP bar
+        const barW = 20, barH = 4;
+        const pct = Math.max(0, this.hp / this.maxHp);
+        const barX = this.x - barW / 2;
+        const barY = this.y - 20;
+        ctx.fillStyle = "red";
+        ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = "lime";
+        ctx.fillRect(barX, barY, barW * pct, barH);
+
+        // Draw sprite
+        const img = SPRITES[this.type];
+        const w = this.type === 'gorilla' ? 48 : 16;
+        const h = this.type === 'gorilla' ? 48 : 16;
+        const ox = this.type === 'gorilla' ? 24 : 8;
+        const oy = h / 2;
+        if (img.complete) {
+          ctx.drawImage(img, this.x + this.offsetX - ox, this.y - oy, w, h);
+        } else {
+          // fallback circle
+          ctx.fillStyle = this.type === 'gorilla' ? 'red' : 'green';
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        if (this.offsetX < 0) this.offsetX += 5;
+        else this.offsetX = 0;
+
+        if (this.flash > 0) this.flash--;
+      }
+    }
+
+    let humans = [];
+    let gorilla;
+    let round = 0;
+    let battleLoop;
+
+    function startBattle() {
+      humans = Array.from({ length: 100 }, (_, i) => {
+        const x = (i % 10) * 45 + 20;
+        const y = Math.floor(i / 10) * 35 +*
+    function runBattle() {
+      if (!gorilla.isAlive() || humans.every(h => !h.isAlive())) {
+        clearInterval(battleLoop);
+        log.textContent += '\n=== BATTLE OVER ===\n';
+        log.textContent += gorilla.isAlive() ? 'GORILLA WINS!' : 'HUMANS WIN!';
+        return;
+      }
+
+      round++;
+      log.textContent += `\n--- ROUND ${round} ---\n`;
+
+      // Humans attack
+      humans.forEach(h => {
+        if (h.isAlive() && gorilla.isAlive()) {
+          const dmg = h.attack(gorilla);
+          log.textContent += `${h.name} hits Gorilla for ${dmg}\n`;
+        }
+      });
+
+      // Gorilla counterattack
+      const alive = humans.filter(h => h.isAlive());
+      for (let i = 0; i < 3; i++) {
+        const target = alive[Math.floor(Math.random() * alive.length)];
+        if (target) {
+          const dmg = gorilla.attack(target);
+          log.textContent += `Gorilla smashes ${target.name} for ${dmg}\n`;
+        }
+      }
+
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function draw() {
+      // Tile the battlefield background
+      for (let x = 0; x < canvas.width; x += 32) {
+        for (let y = 0; y < canvas.height; y += 32) {
+          if (SPRITES.tile.complete) {
+            ctx.drawImage(SPRITES.tile, x, y, 32, 32);
+          } else {
+            ctx.fillStyle = "#222";
+            ctx.fillRect(x, y, 32, 32);
+          }
+        }
+      }
+
+      humans.forEach(h => h.isAlive() && h.draw(ctx));
+      gorilla.isAlive() && gorilla.draw(ctx);
+      requestAnimationFrame(draw);
+    }
+  </script>
+</body>
+</html>
