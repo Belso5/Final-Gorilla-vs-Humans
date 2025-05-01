@@ -40,8 +40,10 @@
   <pre id="log" style="max-height: 200px; overflow-y: auto;"></pre>
 
   <script>
-    const canvas = document.getElementById('battleCanvas');
-    const ctx = canvas.getContext('2d');
+   window.onload = function () {
+  const canvas = document.getElementById('battleCanvas');
+  const ctx = canvas.getContext('2d');
+
     const log = document.getElementById('log');
 
     // Load sprites
@@ -114,7 +116,8 @@
         if (this.flash > 0) this.flash--;
       }
     }
-
+ window.startBattle = startBattle;
+};
     let humans = [];
     let gorilla;
     let round = 0;
